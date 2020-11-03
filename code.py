@@ -20,7 +20,7 @@ from adafruit_midi.pitch_bend       import PitchBend
 #init touch buttons
 pads = [board.A0,board.A1,board.A2,board.A3,board.A4,board.A5]
 touchpads = [touchio.TouchIn(pad) for pad in pads]
-touchThresholds = [3000,3000,3000,3000,3000,3600]
+touchThresholds = [3500,3500,3500,3500,3500,4000]
 for idx, touchpad in enumerate(touchpads): touchpad.threshold = touchThresholds[idx]
 del pads
 
@@ -70,15 +70,15 @@ midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=midi_channel-1
 midi_in = adafruit_midi.MIDI(midi_in=usb_midi.ports[0], in_channel=midi_channel-1)
 
 
-velocity = 127
+maxVal = 127
 
-midiNotes = [[1,2,3,4,5,6],#TouchBtns
-             [7,8,9,10],#TactileBtns
-             [11,12,13,14],#Fader
-             [15,16,17,18],#FaderReset
-             [19,20,21]]#LogoRGB Feedback
+midiControls = [[0,1,2,3,4,5],#TouchBtns
+             [6,7,8,9],#TactileBtns
+             [10,11,12,13],#Fader
+             [14,15,16,17],#FaderReset
+             [18,19,20]]#LogoRGB Feedback
 
-print(midiNotes)
+print(midiControls)
 
 keydownTouch = [False] * len(touchpads)
 keydownBtn = [False] * len(btns)
@@ -110,10 +110,11 @@ LogoColor(0,0,0)
 time.sleep(0.2)
 LogoColor(255,0,0)
 time.sleep(0.2)
-LogoColor(0,255,0)
-time.sleep(0.2)
-LogoColor(0,0,255)
-time.sleep(0.2)
+LogoColor(0,0,0)
+#LogoColor(0,255,0)
+#time.sleep(0.2)
+#LogoColor(0,0,255)
+#time.sleep(0.2)
 
 
 print("starting...")
@@ -123,24 +124,24 @@ print("starting...")
 while True:
 
     msg = midi_in.receive()
-    if isinstance(msg, NoteOn) or isinstance(msg, NoteOff):
-        #print(str(msg.note)+" "+str(msg.velocity))
+    if isinstance(msg, ControlChange):
+        print(str(msg.control)+" "+str(msg.value))
 
-        index = index_2d(midiNotes,msg.note)
+        index = index_2d(midiControls,msg.control)
         #print(index)
 
         if(index[0]==0):#touch
-            touchLeds[index[1]].value = not int(msg.velocity/127)
+            touchLeds[index[1]].value = not int(msg.value/maxVal)
         elif(index[0]==1):#Btn
-            btnLeds[index[1]].value = not int(msg.velocity/127)
+            btnLeds[index[1]].value = not int(msg.value/maxVal)
         #elif(index[0]==2):#Fader
         elif(index[0]==4):#Logo
             if index[1]==0:
-                ledR.duty_cycle = int((msg.velocity) * 65535 / 127)
+                ledR.duty_cycle = int((msg.value) * 65535 / maxVal)
             elif index[1]==1:
-                ledG.duty_cycle = int((msg.velocity) * 65535 / 127)
+                ledG.duty_cycle = int((msg.value) * 65535 / maxVal)
             elif index[1]==2:
-                ledB.duty_cycle = int((msg.velocity) * 65535 / 127)
+                ledB.duty_cycle = int((msg.value) * 65535 / maxVal)
 
 
 
@@ -148,17 +149,18 @@ while True:
         if touchpad.value != keydownTouch[idx]:
             keydownTouch[idx] = touchpad.value
             if keydownTouch[idx]:
-                midi.send(NoteOn(midiNotes[0][idx], velocity))
+                #print(touchpad.raw_value)
+                midi.send(ControlChange(midiControls[0][idx], maxVal))
             else:
-                midi.send(NoteOn(midiNotes[0][idx], 0))  # Using note on 0 for off
+                midi.send(ControlChange(midiControls[0][idx], 0))  # Using note on 0 for off
 
     for idx, btn in enumerate(btns):
         if btn.value != keydownBtn[idx]:
             keydownBtn[idx] = btn.value
             if not keydownBtn[idx]:
-                midi.send(NoteOn(midiNotes[1][idx], velocity))
+                midi.send(ControlChange(midiControls[1][idx], maxVal))
             else:
-                midi.send(NoteOn(midiNotes[1][idx], 0))  # Using note on 0 for off
+                midi.send(ControlChange(midiControls[1][idx], 0))  # Using note on 0 for off
     
     for idx, fader in enumerate(faders):
         faderVal = int(fader.value/512)
@@ -166,12 +168,14 @@ while True:
             FaderLast[idx] = faderVal
             FaderLastRaw[idx] = fader.value
             if faderVal>1:
-                midi.send(NoteOn(midiNotes[2][idx], faderVal))
+                midi.send(ControlChange(midiControls[2][idx], faderVal))
                 if not FaderOverride:
-                    FaderOverride[idx] = False
-                    midi.send(NoteOn(midiNotes[3][idx], 0)) #set Fader override                
+                    FaderOverride[idx] = True
+                    midi.send(ControlChange(midiControls[3][idx], 0)) #set Fader override                
 
             else:
+                if FaderOverride:
+                    midi.send(ControlChange(midiControls[2][idx], 0))
                 FaderOverride[idx] = False
-                midi.send(NoteOn(midiNotes[2][idx], 0))
-                midi.send(NoteOn(midiNotes[3][idx], velocity)) #reset Fader override
+                time.sleep(0.01)
+                midi.send(ControlChange(midiControls[3][idx], maxVal)) #reset Fader override
