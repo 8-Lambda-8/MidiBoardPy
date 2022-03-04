@@ -3,17 +3,13 @@ from array import *
 import board
 
 import touchio
-import pulseio
+import pwmio
 from analogio import AnalogIn
 from digitalio import DigitalInOut, Direction, Pull
 
 import usb_midi
 import adafruit_midi
-from adafruit_midi.midi_message     import note_parser
-from adafruit_midi.note_on          import NoteOn
-from adafruit_midi.note_off         import NoteOff
 from adafruit_midi.control_change   import ControlChange
-from adafruit_midi.pitch_bend       import PitchBend
 
 #####INPUTS
 
@@ -56,9 +52,9 @@ del btnLedPins
 del initIO
 
 #init Logo Leds
-ledR = pulseio.PWMOut(board.D14, frequency=5000, duty_cycle=0)
-ledG = pulseio.PWMOut(board.D15, frequency=5000, duty_cycle=0)
-ledB = pulseio.PWMOut(board.D16, frequency=5000, duty_cycle=0)
+ledR = pwmio.PWMOut(board.D14, frequency=5000, duty_cycle=0)
+ledG = pwmio.PWMOut(board.D15, frequency=5000, duty_cycle=0)
+ledB = pwmio.PWMOut(board.D16, frequency=5000, duty_cycle=0)
 
 
 time.sleep(1)
@@ -111,15 +107,9 @@ time.sleep(0.2)
 LogoColor(255,0,0)
 time.sleep(0.2)
 LogoColor(0,0,0)
-#LogoColor(0,255,0)
-#time.sleep(0.2)
-#LogoColor(0,0,255)
-#time.sleep(0.2)
 
 
 print("starting...")
-#important: LED is active when False!
-#important: capacitive values might need adjustment depending on your procedural design
 
 while True:
 
@@ -152,7 +142,7 @@ while True:
                 #print(touchpad.raw_value)
                 midi.send(ControlChange(midiControls[0][idx], maxVal))
             else:
-                midi.send(ControlChange(midiControls[0][idx], 0))  # Using note on 0 for off
+                midi.send(ControlChange(midiControls[0][idx], 0))
 
     for idx, btn in enumerate(btns):
         if btn.value != keydownBtn[idx]:
@@ -160,7 +150,7 @@ while True:
             if not keydownBtn[idx]:
                 midi.send(ControlChange(midiControls[1][idx], maxVal))
             else:
-                midi.send(ControlChange(midiControls[1][idx], 0))  # Using note on 0 for off
+                midi.send(ControlChange(midiControls[1][idx], 0))
     
     for idx, fader in enumerate(faders):
         faderVal = int(fader.value/512)
