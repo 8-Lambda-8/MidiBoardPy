@@ -74,6 +74,12 @@ midiControls = [[0,1,2,3,4,5],#TouchBtns
              [14,15,16,17],#FaderReset
              [18,19,20]]#LogoRGB Feedback
 
+midi_channel_offset = 0
+
+for i, m in enumerate(midiControls):
+    for j, x in enumerate(m):
+        midiControls[i][j] = x + midi_channel_offset
+
 print(midiControls)
 
 keydownTouch = [False] * len(touchpads)
@@ -114,7 +120,7 @@ print("starting...")
 while True:
 
     msg = midi_in.receive()
-    if isinstance(msg, ControlChange):
+    if isinstance(msg, ControlChange) and midi_channel_offset <=msg.control <= midi_channel_offset+20:
         print(str(msg.control)+" "+str(msg.value))
 
         index = index_2d(midiControls,msg.control)
