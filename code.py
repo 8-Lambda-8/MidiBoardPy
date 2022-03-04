@@ -163,15 +163,4 @@ while True:
         if faderVal != FaderLast[idx] and abs(FaderLastRaw[idx]-fader.value)>255:
             FaderLast[idx] = faderVal
             FaderLastRaw[idx] = fader.value
-            if faderVal>1:
-                midi.send(ControlChange(midiControls[2][idx], faderVal))
-                if not FaderOverride:
-                    FaderOverride[idx] = True
-                    midi.send(ControlChange(midiControls[3][idx], 0)) #set Fader override                
-
-            else:
-                if FaderOverride:
-                    midi.send(ControlChange(midiControls[2][idx], 0))
-                FaderOverride[idx] = False
-                time.sleep(0.01)
-                midi.send(ControlChange(midiControls[3][idx], maxVal)) #reset Fader override
+            midi.send(ControlChange(midiControls[2][idx], faderVal))
