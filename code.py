@@ -83,7 +83,7 @@ for i, m in enumerate(midiControls):
 print(midiControls)
 
 keydownTouch = [False] * len(touchpads)
-keydownBtn = [False] * len(btns)
+keydownBtn = [True] * len(btns)
 FaderLast = [0]*len(faders)
 FaderLastRaw = [0]*len(faders)
 FaderOverride = [0]*len(faders)
@@ -153,10 +153,11 @@ while True:
     for idx, btn in enumerate(btns):
         if btn.value != keydownBtn[idx]:
             keydownBtn[idx] = btn.value
-            if not keydownBtn[idx]:
-                midi.send(ControlChange(midiControls[1][idx], maxVal))
-            else:
-                midi.send(ControlChange(midiControls[1][idx], 0))
+            if btn.value:
+                if btnLeds[idx].value:
+                    midi.send(ControlChange(midiControls[1][idx], maxVal))
+                else:
+                    midi.send(ControlChange(midiControls[1][idx], 0))
     
     for idx, fader in enumerate(faders):
         faderVal = int(fader.value/512)
